@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -106,13 +105,12 @@ const AdminPanel = () => {
         Object.entries(data).forEach(([userId, userAppointments]) => {
           if (userAppointments) {
             Object.entries(userAppointments as Record<string, any>).forEach(([appointmentId, appointmentData]) => {
-              // Fixed the type issue by explicitly typing appointmentData as any
               const appointment = appointmentData as any;
               allAppointments.push({
                 id: appointmentId,
                 userId,
                 status: appointment.status || 'confirmed',
-                ...(appointment)
+                ...(appointment as any)
               });
             });
           }

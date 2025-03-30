@@ -32,14 +32,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="h-10 w-10"
         >
           <Paperclip className="h-5 w-5 text-gray-500" />
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            onChange={handleFileUpload} 
-            className="hidden" 
-            accept="*/*" // Deliberately accepting all files to showcase security vulnerability
-          />
         </Button>
+        <input 
+          type="file" 
+          ref={fileInputRef}
+          onChange={handleFileUpload} 
+          className="hidden" 
+          accept="*/*" // Deliberately accepting all files to showcase security vulnerability
+        />
         <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}

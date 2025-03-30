@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, MessageSquare } from 'lucide-react';
@@ -140,7 +139,10 @@ const ChatBot = () => {
       navigate('/login');
       return;
     }
-    fileInputRef.current?.click();
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
