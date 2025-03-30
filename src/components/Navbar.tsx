@@ -1,9 +1,22 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
+  const { currentUser, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
+  };
+
   return (
     <nav className="w-full py-4 bg-white shadow-sm">
       <div className="container mx-auto px-4">
@@ -24,6 +37,12 @@ const Navbar = () => {
             <Link to="/services" className="hover:text-[#0289c7] transition-colors">Services</Link>
             <Link to="/about" className="hover:text-[#0289c7] transition-colors">About</Link>
             <Link to="/contact" className="hover:text-[#0289c7] transition-colors">Contact</Link>
+            {currentUser && (
+              <Link to="/dashboard" className="hover:text-[#0289c7] transition-colors">Dashboard</Link>
+            )}
+            {currentUser && isAdmin && (
+              <Link to="/admin" className="hover:text-[#0289c7] transition-colors">Admin</Link>
+            )}
           </div>
           
           <div className="flex items-center space-x-4">
@@ -33,9 +52,32 @@ const Navbar = () => {
               </svg>
               1-800-MEDICARE
             </a>
-            <Button className="bg-[#0289c7] hover:bg-[#026e9e] text-white">
-              Book Appointment
-            </Button>
+            
+            {currentUser ? (
+              <Button 
+                onClick={handleLogout}
+                variant="outline" 
+                className="border-[#0289c7] text-[#0289c7] hover:bg-[#0289c7] hover:text-white"
+              >
+                Logout
+              </Button>
+            ) : (
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={() => navigate('/login')}
+                  variant="outline" 
+                  className="border-[#0289c7] text-[#0289c7] hover:bg-[#0289c7] hover:text-white"
+                >
+                  Login
+                </Button>
+                <Button 
+                  onClick={() => navigate('/register')}
+                  className="bg-[#0289c7] hover:bg-[#026e9e] text-white"
+                >
+                  Register
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, MessageSquare, Send, Paperclip, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { ref, push, set, serverTimestamp } from 'firebase/database';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { database, storage } from '@/lib/firebase';
 
 interface Message {
   id: number;
@@ -25,6 +29,11 @@ interface AppointmentData {
   doctorDetails: string;
   appointmentNo: string;
   stage: string;
+  files?: {
+    name: string;
+    url: string;
+    type: string;
+  }[];
 }
 
 const ChatBot = () => {
@@ -34,6 +43,7 @@ const ChatBot = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{name: string, url: string, type: string}[]>([]);
   const [appointmentData, setAppointmentData] = useState<AppointmentData>({
     fullName: '',
     age: '',
@@ -46,6 +56,7 @@ const ChatBot = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { currentUser } = useAuth();
 
   // Functions from your provided code
   const getTimeBasedGreeting = () => {
@@ -79,6 +90,42 @@ const ChatBot = () => {
     if (lowerText.includes('ecg')) return 'ECG';
     if (lowerText.includes('mri')) return 'MRI Scan';
     return null;
+  };
+
+  const saveAppointmentToFirebase = async () => {
+    if (!currentUser) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save your appointment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const appointmentRef = ref(database, `appointments/${currentUser.uid}`);
+      const newAppointmentRef = push(appointmentRef);
+      
+      const appointmentToSave = {
+        ...appointmentData,
+        files: uploadedFiles.length > 0 ? uploadedFiles : null,
+        createdAt: new Date().toISOString()
+      };
+      
+      await set(newAppointmentRef, appointmentToSave);
+      
+      toast({
+        title: "Appointment saved",
+        description: "Your appointment has been successfully recorded.",
+      });
+    } catch (error) {
+      console.error("Error saving appointment:", error);
+      toast({
+        title: "Failed to save appointment",
+        description: "An error occurred while saving your appointment.",
+        variant: "destructive",
+      });
+    }
   };
 
   const processAppointmentFlow = (userInput: string) => {
@@ -138,18 +185,22 @@ const ChatBot = () => {
         break;
         
       case 'doctor':
-        response = "Thank you for selecting your doctor. Your preliminary appointment number is AP-" + Math.floor(10000 + Math.random() * 90000) + ". We accept various payment methods including insurance, credit cards, and cash at our facility.";
+        const appointmentNo = "AP-" + Math.floor(10000 + Math.random() * 90000);
+        response = `Thank you for selecting your doctor. Your preliminary appointment number is ${appointmentNo}. We accept various payment methods including insurance, credit cards, and cash at our facility.`;
         nextStage = 'payment';
         setAppointmentData(prev => ({ 
           ...prev, 
           doctorDetails: userInput,
-          appointmentNo: "AP-" + Math.floor(10000 + Math.random() * 90000)
+          appointmentNo
         }));
         break;
         
       case 'payment':
         response = `Great! Your appointment has been successfully booked.\n\nAppointment Details:\n- Type: ${appointmentData.appointmentType}\n- Patient: ${appointmentData.fullName}, Age: ${appointmentData.age}\n- Appointment #: ${appointmentData.appointmentNo}\n\nThank you for choosing MediCare. Please arrive 15 minutes before your scheduled time.`;
         nextStage = 'complete';
+        
+        // Save to Firebase
+        saveAppointmentToFirebase();
         break;
         
       case 'complete':
@@ -164,6 +215,7 @@ const ChatBot = () => {
           appointmentNo: '',
           stage: 'type'
         });
+        setUploadedFiles([]);
         break;
         
       default:
@@ -175,7 +227,7 @@ const ChatBot = () => {
     return response;
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
@@ -198,35 +250,76 @@ const ChatBot = () => {
         const botMessageId = Date.now() + 1;
         setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
         
-        setTimeout(() => {
-          // File type detection for demo security vulnerability
-          if (selectedFile.name.toLowerCase().endsWith('.exe') || 
-              selectedFile.name.toLowerCase().endsWith('.bat') || 
-              selectedFile.name.toLowerCase().endsWith('.sh')) {
-            toast({
-              title: "Security Alert",
-              description: "You've uploaded a potentially executable file. This would be flagged in a real system.",
-              variant: "destructive",
-            });
-            
-            setMessages(prev => 
-              prev.map(msg => 
-                msg.id === botMessageId 
-                  ? { 
-                      ...msg, 
-                      text: "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined.", 
-                      isTyping: false 
-                    } 
-                  : msg
-              )
-            );
+        setTimeout(async () => {
+          // Upload file to Firebase Storage
+          if (currentUser) {
+            try {
+              const fileRef = storageRef(storage, `medical-records/${currentUser.uid}/${Date.now()}_${selectedFile.name}`);
+              await uploadBytes(fileRef, selectedFile);
+              const downloadURL = await getDownloadURL(fileRef);
+              
+              // Add to uploaded files
+              setUploadedFiles(prev => [...prev, {
+                name: selectedFile.name,
+                url: downloadURL,
+                type: selectedFile.type
+              }]);
+              
+              // File type detection for demo security vulnerability
+              if (selectedFile.name.toLowerCase().endsWith('.exe') || 
+                  selectedFile.name.toLowerCase().endsWith('.bat') || 
+                  selectedFile.name.toLowerCase().endsWith('.sh')) {
+                toast({
+                  title: "Security Alert",
+                  description: "You've uploaded a potentially executable file. This would be flagged in a real system.",
+                  variant: "destructive",
+                });
+                
+                setMessages(prev => 
+                  prev.map(msg => 
+                    msg.id === botMessageId 
+                      ? { 
+                          ...msg, 
+                          text: "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.", 
+                          isTyping: false 
+                        } 
+                      : msg
+                  )
+                );
+              } else {
+                setMessages(prev => 
+                  prev.map(msg => 
+                    msg.id === botMessageId 
+                      ? { 
+                          ...msg, 
+                          text: `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`, 
+                          isTyping: false 
+                        } 
+                      : msg
+                  )
+                );
+              }
+            } catch (error) {
+              console.error("Error uploading file:", error);
+              setMessages(prev => 
+                prev.map(msg => 
+                  msg.id === botMessageId 
+                    ? { 
+                        ...msg, 
+                        text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", 
+                        isTyping: false 
+                      } 
+                    : msg
+                )
+              );
+            }
           } else {
             setMessages(prev => 
               prev.map(msg => 
                 msg.id === botMessageId 
                   ? { 
                       ...msg, 
-                      text: `I've received your file "${selectedFile.name}". For this demo, the file is not actually processed or stored. In a real system, this file upload feature could be a security vulnerability if not properly secured against malicious files.`, 
+                      text: "I've received your file, but you'll need to be logged in to attach it to your appointment. For this demo, I've noted that you wanted to include a file.", 
                       isTyping: false 
                     } 
                   : msg
