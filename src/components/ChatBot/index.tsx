@@ -9,6 +9,7 @@ import { Message } from '@/types/chatTypes';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import { useAppointmentFlow } from './AppointmentFlow';
+import { useNavigate } from 'react-router-dom';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,7 @@ const ChatBot = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
   const resetUploadedFiles = () => {
     setUploadedFiles([]);
@@ -29,10 +31,21 @@ const ChatBot = () => {
   const { processAppointmentFlow } = useAppointmentFlow({
     currentUser,
     uploadedFiles,
-    resetUploadedFiles
+    resetUploadedFiles,
+    navigate
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentUser) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to upload files and book appointments.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+    
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
@@ -56,70 +69,55 @@ const ChatBot = () => {
         setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
         
         setTimeout(async () => {
-          // Upload file to Firebase Storage
-          if (currentUser) {
-            try {
-              // Upload file to storage and get URL
-              const fileUpload = await uploadFileToStorage(selectedFile, currentUser);
+          try {
+            // Upload file to Firebase Storage
+            const fileUpload = await uploadFileToStorage(selectedFile, currentUser);
+            
+            // Add to uploaded files
+            setUploadedFiles(prev => [...prev, fileUpload]);
+            
+            // File type detection for demo security vulnerability
+            if (selectedFile.name.toLowerCase().endsWith('.exe') || 
+                selectedFile.name.toLowerCase().endsWith('.bat') || 
+                selectedFile.name.toLowerCase().endsWith('.sh')) {
+              toast({
+                title: "Security Alert",
+                description: "You've uploaded a potentially executable file. This would be flagged in a real system.",
+                variant: "destructive",
+              });
               
-              // Add to uploaded files
-              setUploadedFiles(prev => [...prev, fileUpload]);
-              
-              // File type detection for demo security vulnerability
-              if (selectedFile.name.toLowerCase().endsWith('.exe') || 
-                  selectedFile.name.toLowerCase().endsWith('.bat') || 
-                  selectedFile.name.toLowerCase().endsWith('.sh')) {
-                toast({
-                  title: "Security Alert",
-                  description: "You've uploaded a potentially executable file. This would be flagged in a real system.",
-                  variant: "destructive",
-                });
-                
-                setMessages(prev => 
-                  prev.map(msg => 
-                    msg.id === botMessageId 
-                      ? { 
-                          ...msg, 
-                          text: "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.", 
-                          isTyping: false 
-                        } 
-                      : msg
-                  )
-                );
-              } else {
-                setMessages(prev => 
-                  prev.map(msg => 
-                    msg.id === botMessageId 
-                      ? { 
-                          ...msg, 
-                          text: `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`, 
-                          isTyping: false 
-                        } 
-                      : msg
-                  )
-                );
-              }
-            } catch (error) {
-              console.error("Error uploading file:", error);
               setMessages(prev => 
                 prev.map(msg => 
                   msg.id === botMessageId 
                     ? { 
                         ...msg, 
-                        text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", 
+                        text: "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.", 
+                        isTyping: false 
+                      } 
+                    : msg
+                )
+              );
+            } else {
+              setMessages(prev => 
+                prev.map(msg => 
+                  msg.id === botMessageId 
+                    ? { 
+                        ...msg, 
+                        text: `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`, 
                         isTyping: false 
                       } 
                     : msg
                 )
               );
             }
-          } else {
+          } catch (error) {
+            console.error("Error uploading file:", error);
             setMessages(prev => 
               prev.map(msg => 
                 msg.id === botMessageId 
                   ? { 
                       ...msg, 
-                      text: "I've received your file, but you'll need to be logged in to attach it to your appointment. For this demo, I've noted that you wanted to include a file.", 
+                      text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", 
                       isTyping: false 
                     } 
                   : msg
@@ -132,6 +130,15 @@ const ChatBot = () => {
   };
 
   const openFileSelector = () => {
+    if (!currentUser) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to upload files and book appointments.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
     fileInputRef.current?.click();
   };
 

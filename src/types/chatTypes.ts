@@ -19,6 +19,9 @@ export interface AppointmentData {
   doctorDetails: string;
   appointmentNo: string;
   stage: string;
+  status?: 'confirmed' | 'cancelled' | 'pending';
+  cancellationReason?: string;
+  cancelledAt?: string;
   files?: {
     name: string;
     url: string;
@@ -29,5 +32,10 @@ export interface AppointmentData {
 export interface FileUpload {
   name: string;
   url: string;
+  type: string;
+}
+
+export interface DoctorCapacity {
+  count: number;
   type: string;
 }
