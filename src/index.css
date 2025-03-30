@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -49,6 +50,18 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Healthcare specific colors */
+    --healthcare-50: 195 100% 95%;
+    --healthcare-100: 195 100% 85%;
+    --healthcare-200: 195 100% 75%;
+    --healthcare-300: 195 100% 65%;
+    --healthcare-400: 195 100% 55%;
+    --healthcare-500: 195 100% 45%;
+    --healthcare-600: 195 78% 39%;
+    --healthcare-700: 195 70% 33%;
+    --healthcare-800: 195 70% 25%;
+    --healthcare-900: 195 70% 15%;
   }
 
   .dark {
@@ -98,4 +111,8 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.button-transition {
+  @apply transition-all duration-200 ease-in-out;
 }
