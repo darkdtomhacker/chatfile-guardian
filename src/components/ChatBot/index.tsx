@@ -32,7 +32,8 @@ const ChatBot = () => {
     currentUser,
     uploadedFiles,
     resetUploadedFiles,
-    navigate
+    navigate,
+    setMessages
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { File, FileText } from 'lucide-react';
+import { DoctorCapacity } from '@/types/chatTypes';
 
 interface PatientData {
   id: string;
@@ -55,6 +55,10 @@ interface AppointmentData {
   }[];
 }
 
+interface CapacityDataRecord {
+  [key: string]: DoctorCapacity;
+}
+
 const AdminPanel = () => {
   const { currentUser, logout, isAdmin } = useAuth();
   const [patients, setPatients] = useState<PatientData[]>([]);
@@ -66,7 +70,7 @@ const AdminPanel = () => {
   const [selectedFiles, setSelectedFiles] = useState<{name: string, url: string, type: string}[]>([]);
   const [cancelDetailsOpen, setCancelDetailsOpen] = useState(false);
   const [selectedCancelDetails, setSelectedCancelDetails] = useState<{reason: string, date: string} | null>(null);
-  const [capacityData, setCapacityData] = useState<{[key: string]: {count: number, type: string}}>({});
+  const [capacityData, setCapacityData] = useState<CapacityDataRecord>({});
 
   useEffect(() => {
     if (!currentUser || !isAdmin) {
@@ -74,7 +78,6 @@ const AdminPanel = () => {
       return;
     }
 
-    // Fetch all users with role patient
     const usersRef = ref(database, 'users');
     const unsubscribeUsers = onValue(usersRef, (snapshot) => {
       const data = snapshot.val();
@@ -92,7 +95,6 @@ const AdminPanel = () => {
       }
     });
 
-    // Fetch all appointments
     const appointmentsRef = ref(database, 'appointments');
     const unsubscribeAppointments = onValue(appointmentsRef, (snapshot) => {
       const data = snapshot.val();
@@ -100,7 +102,6 @@ const AdminPanel = () => {
       if (data) {
         const allAppointments: AppointmentData[] = [];
         
-        // Flatten the nested structure
         Object.entries(data).forEach(([userId, userAppointments]) => {
           if (userAppointments) {
             Object.entries(userAppointments as any).forEach(([appointmentId, appointmentData]) => {
@@ -122,12 +123,11 @@ const AdminPanel = () => {
       setLoading(false);
     });
 
-    // Fetch capacity data
     const capacityRef = ref(database, 'doctorCapacity');
     const unsubscribeCapacity = onValue(capacityRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setCapacityData(data);
+        setCapacityData(data as CapacityDataRecord);
       } else {
         setCapacityData({});
       }
@@ -207,7 +207,6 @@ const AdminPanel = () => {
           <Button onClick={handleLogout} variant="outline">Log Out</Button>
         </div>
 
-        {/* Capacity Status */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Appointment Capacity</h2>
           
@@ -243,7 +242,6 @@ const AdminPanel = () => {
           )}
         </div>
 
-        {/* Patients Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Registered Patients</h2>
           
@@ -274,7 +272,6 @@ const AdminPanel = () => {
           )}
         </div>
         
-        {/* Appointments Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">All Appointments</h2>
           
@@ -358,7 +355,6 @@ const AdminPanel = () => {
         </div>
       </div>
       
-      {/* Files Dialog */}
       <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -400,7 +396,6 @@ const AdminPanel = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Cancellation Details Dialog */}
       <Dialog open={cancelDetailsOpen} onOpenChange={setCancelDetailsOpen}>
         <DialogContent>
           <DialogHeader>

@@ -12,19 +12,22 @@ import { User } from 'firebase/auth';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { NavigateFunction } from 'react-router-dom';
+import { Message } from '@/types/chatTypes';
 
 interface UseAppointmentFlowProps {
   currentUser: User | null;
   uploadedFiles: { name: string; url: string; type: string; }[];
   resetUploadedFiles: () => void;
   navigate: NavigateFunction;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 export const useAppointmentFlow = ({ 
   currentUser, 
   uploadedFiles,
   resetUploadedFiles,
-  navigate
+  navigate,
+  setMessages
 }: UseAppointmentFlowProps) => {
   const [appointmentData, setAppointmentData] = useState<AppointmentData>({
     fullName: '',
