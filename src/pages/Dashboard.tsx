@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,29 +7,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import Section from '@/components/ui/section';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
 import { cancelAppointment } from '@/services/appointmentService';
 import ChatBot from '@/components/ChatBot';
-import { File, FileText } from 'lucide-react';
+
+// Import our new components
+import AppointmentsList from '@/components/dashboard/AppointmentsList';
+import HealthRecords from '@/components/dashboard/HealthRecords';
+import CancelAppointmentDialog from '@/components/dashboard/CancelAppointmentDialog';
+import FilesDialog from '@/components/dashboard/FilesDialog';
 
 interface AppointmentData {
   id: string;
@@ -54,6 +41,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Dialog states
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
   const [cancellationReason, setCancellationReason] = useState("");
@@ -139,19 +128,6 @@ const Dashboard = () => {
     setFileDialogOpen(true);
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch(status) {
-      case 'confirmed':
-        return "bg-green-100 text-green-800";
-      case 'cancelled':
-        return "bg-red-100 text-red-800";
-      case 'pending':
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -165,145 +141,34 @@ const Dashboard = () => {
         </div>
 
         <Section title="Your Appointments">
-          {loading ? (
-            <p>Loading your appointments...</p>
-          ) : appointments.length > 0 ? (
-            <Table>
-              <TableCaption>List of your medical appointments</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Appointment No.</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Doctor</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Files</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {appointments.map((appointment) => (
-                  <TableRow key={appointment.id} className={appointment.status === 'cancelled' ? 'text-gray-400' : ''}>
-                    <TableCell className="font-medium">{appointment.appointmentNo}</TableCell>
-                    <TableCell>{appointment.appointmentType}</TableCell>
-                    <TableCell>{appointment.doctorDetails}</TableCell>
-                    <TableCell>{new Date(appointment.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      {appointment.files && appointment.files.length > 0 ? (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => showFiles(appointment.files || [])}
-                          className="flex items-center text-blue-500 hover:text-blue-700"
-                        >
-                          <FileText className="h-4 w-4 mr-1" />
-                          {appointment.files.length} file(s)
-                        </Button>
-                      ) : (
-                        <span className="text-gray-400">None</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(appointment.status)}`}>
-                        {appointment.status === 'confirmed' ? 'Confirmed' : 
-                         appointment.status === 'cancelled' ? 'Cancelled' : 'Pending'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {appointment.status !== 'cancelled' && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleCancelAppointment(appointment)}
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">You don't have any appointments yet.</p>
-              <p className="text-sm text-gray-400">Use the chat assistant to book your first appointment.</p>
-            </div>
-          )}
+          <AppointmentsList 
+            appointments={appointments} 
+            loading={loading} 
+            onCancel={handleCancelAppointment}
+            onShowFiles={showFiles}
+          />
         </Section>
         
         <Section title="Health Records">
-          <p className="text-gray-500">No health records available yet. Your medical history will appear here after your first visit.</p>
+          <HealthRecords />
         </Section>
       </div>
       
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel Appointment</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for cancelling appointment {selectedAppointment?.appointmentNo}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Reason for cancellation"
-              value={cancellationReason}
-              onChange={(e) => setCancellationReason(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={confirmCancellation} disabled={!cancellationReason}>
-              Confirm Cancellation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <CancelAppointmentDialog 
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        appointment={selectedAppointment}
+        reason={cancellationReason}
+        onReasonChange={setCancellationReason}
+        onConfirm={confirmCancellation}
+      />
       
-      <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Uploaded Files</DialogTitle>
-            <DialogDescription>
-              Files attached to your appointment
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {selectedFiles.map((file, index) => (
-              <div key={index} className="flex items-center p-3 border rounded-md">
-                <div className="flex-shrink-0 mr-3">
-                  {file.type.includes('image') ? (
-                    <img src={file.url} alt={file.name} className="h-10 w-10 object-cover rounded" />
-                  ) : (
-                    <File className="h-10 w-10 text-blue-500" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                  <p className="text-xs text-gray-500">{file.type}</p>
-                </div>
-                <a 
-                  href={file.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="ml-4 flex-shrink-0 bg-blue-100 text-blue-800 px-3 py-1 rounded text-xs font-medium"
-                >
-                  View
-                </a>
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button>Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FilesDialog 
+        open={fileDialogOpen}
+        onOpenChange={setFileDialogOpen}
+        files={selectedFiles}
+      />
       
       <ChatBot />
     </div>
