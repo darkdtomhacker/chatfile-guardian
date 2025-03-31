@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import Section from '@/components/ui/section';
 import {
   Table,
   TableBody,
@@ -24,12 +24,11 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
 import { cancelAppointment } from '@/services/appointmentService';
 import ChatBot from '@/components/ChatBot';
-import { File, FileText, X } from 'lucide-react';
+import { File, FileText } from 'lucide-react';
 
 interface AppointmentData {
   id: string;
@@ -165,9 +164,7 @@ const Dashboard = () => {
           <Button onClick={handleLogout} variant="outline">Log Out</Button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Appointments</h2>
-          
+        <Section title="Your Appointments">
           {loading ? (
             <p>Loading your appointments...</p>
           ) : appointments.length > 0 ? (
@@ -233,15 +230,13 @@ const Dashboard = () => {
               <p className="text-sm text-gray-400">Use the chat assistant to book your first appointment.</p>
             </div>
           )}
-        </div>
+        </Section>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Health Records</h2>
+        <Section title="Health Records">
           <p className="text-gray-500">No health records available yet. Your medical history will appear here after your first visit.</p>
-        </div>
+        </Section>
       </div>
       
-      {/* Cancellation Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -269,7 +264,6 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Files Dialog */}
       <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
         <DialogContent>
           <DialogHeader>

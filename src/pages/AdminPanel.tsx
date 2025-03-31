@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePatientData } from '@/hooks/usePatientData';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useCapacityData } from '@/hooks/useCapacityData';
+import Section from '@/components/ui/section';
 
 // Import our components
 import PatientTable from '@/components/admin/PatientTable';
@@ -23,10 +24,10 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   
   // Dialog states
-  const [fileDialogOpen, setFileDialogOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<{name: string, url: string, type: string}[]>([]);
-  const [cancelDetailsOpen, setCancelDetailsOpen] = useState(false);
-  const [selectedCancelDetails, setSelectedCancelDetails] = useState<{reason: string, date: string} | null>(null);
+  const [fileDialogOpen, setFileDialogOpen] = React.useState(false);
+  const [selectedFiles, setSelectedFiles] = React.useState<{name: string, url: string, type: string}[]>([]);
+  const [cancelDetailsOpen, setCancelDetailsOpen] = React.useState(false);
+  const [selectedCancelDetails, setSelectedCancelDetails] = React.useState<{reason: string, date: string} | null>(null);
 
   useEffect(() => {
     if (!currentUser || !isAdmin) {
@@ -70,18 +71,15 @@ const AdminPanel = () => {
           <Button onClick={handleLogout} variant="outline">Log Out</Button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Appointment Capacity</h2>
+        <Section title="Appointment Capacity">
           <CapacityDisplay capacityData={capacityData} />
-        </div>
+        </Section>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Registered Patients</h2>
+        <Section title="Registered Patients">
           <PatientTable patients={patients} loading={patientsLoading} />
-        </div>
+        </Section>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">All Appointments</h2>
+        <Section title="All Appointments">
           <AppointmentTable 
             appointments={appointments} 
             loading={appointmentsLoading} 
@@ -89,7 +87,7 @@ const AdminPanel = () => {
             onShowFiles={showFiles}
             onShowCancellationDetails={showCancellationDetails}
           />
-        </div>
+        </Section>
       </div>
       
       <FileDialog 
