@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, AlertTriangle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -37,7 +37,12 @@ interface AppointmentTableProps {
   loading: boolean;
   onDelete: (userId: string, appointmentId: string) => void;
   onShowFiles: (files: {name: string, url: string, type: string}[]) => void;
-  onShowCancellationDetails: (reason: string, date: string) => void;
+  onShowCancellationDetails: (details: {
+    reason: string;
+    date: string;
+    appointmentNo: string;
+    patientName: string;
+  }) => void;
 }
 
 const AppointmentTable: React.FC<AppointmentTableProps> = ({ 
@@ -68,6 +73,16 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
     return <p className="text-gray-500">No appointments recorded yet.</p>;
   }
 
+  // Sort appointments to show cancelled ones first for admin review
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    // First sort by status (cancelled first)
+    if (a.status === 'cancelled' && b.status !== 'cancelled') return -1;
+    if (a.status !== 'cancelled' && b.status === 'cancelled') return 1;
+    
+    // Then sort by date (newest first)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   return (
     <Table>
       <TableCaption>Total appointments: {appointments.length}</TableCaption>
@@ -85,12 +100,15 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {appointments.map((appointment) => (
-          <TableRow key={appointment.id} className={appointment.status === 'cancelled' ? 'text-gray-400' : ''}>
+        {sortedAppointments.map((appointment) => (
+          <TableRow 
+            key={appointment.id} 
+            className={appointment.status === 'cancelled' ? 'bg-red-50/30' : ''}
+          >
             <TableCell className="font-medium">{appointment.appointmentNo}</TableCell>
             <TableCell>{appointment.fullName} ({appointment.age})</TableCell>
             <TableCell>{appointment.appointmentType}</TableCell>
-            <TableCell>{appointment.symptoms}</TableCell>
+            <TableCell className="max-w-[200px] truncate">{appointment.symptoms}</TableCell>
             <TableCell>{appointment.doctorDetails}</TableCell>
             <TableCell>
               {appointment.files && appointment.files.length > 0 ? (
@@ -112,12 +130,15 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => onShowCancellationDetails(
-                    appointment.cancellationReason || 'No reason provided', 
-                    appointment.cancelledAt || ''
-                  )}
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(appointment.status)}`}
+                  onClick={() => onShowCancellationDetails({
+                    reason: appointment.cancellationReason || 'No reason provided', 
+                    date: appointment.cancelledAt || appointment.createdAt,
+                    appointmentNo: appointment.appointmentNo,
+                    patientName: appointment.fullName
+                  })}
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(appointment.status)}`}
                 >
+                  <AlertTriangle className="h-3 w-3" />
                   Cancelled
                 </Button>
               ) : (

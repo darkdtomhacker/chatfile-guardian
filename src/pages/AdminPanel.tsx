@@ -27,7 +27,12 @@ const AdminPanel = () => {
   const [fileDialogOpen, setFileDialogOpen] = React.useState(false);
   const [selectedFiles, setSelectedFiles] = React.useState<{name: string, url: string, type: string}[]>([]);
   const [cancelDetailsOpen, setCancelDetailsOpen] = React.useState(false);
-  const [selectedCancelDetails, setSelectedCancelDetails] = React.useState<{reason: string, date: string} | null>(null);
+  const [selectedCancelDetails, setSelectedCancelDetails] = React.useState<{
+    reason: string;
+    date: string;
+    appointmentNo?: string;
+    patientName?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!currentUser || !isAdmin) {
@@ -50,14 +55,22 @@ const AdminPanel = () => {
     setFileDialogOpen(true);
   };
 
-  const showCancellationDetails = (reason: string, date: string) => {
-    setSelectedCancelDetails({reason, date});
+  const showCancellationDetails = (details: {
+    reason: string;
+    date: string;
+    appointmentNo: string;
+    patientName: string;
+  }) => {
+    setSelectedCancelDetails(details);
     setCancelDetailsOpen(true);
   };
 
   if (!isAdmin) {
     return null;
   }
+
+  const cancelledAppointmentsCount = appointments.filter(a => a.status === 'cancelled').length;
+  const confirmedAppointmentsCount = appointments.filter(a => a.status === 'confirmed').length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,6 +82,22 @@ const AdminPanel = () => {
             <p className="text-gray-600 mt-2">Welcome, {currentUser?.displayName || 'Admin'}</p>
           </div>
           <Button onClick={handleLogout} variant="outline">Log Out</Button>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-lg font-medium text-gray-800">Total Appointments</h3>
+            <p className="text-3xl font-bold mt-2">{appointments.length}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-lg font-medium text-gray-800">Confirmed Appointments</h3>
+            <p className="text-3xl font-bold mt-2 text-green-600">{confirmedAppointmentsCount}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-lg font-medium text-gray-800">Cancelled Appointments</h3>
+            <p className="text-3xl font-bold mt-2 text-red-600">{cancelledAppointmentsCount}</p>
+          </div>
         </div>
 
         <Section title="Appointment Capacity">

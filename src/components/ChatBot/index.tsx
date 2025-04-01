@@ -1,11 +1,21 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import ChatButton from './components/ChatButton';
 import ChatWindow from './components/ChatWindow';
 import { useChat } from './hooks/useChat';
 
-const ChatBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface ChatBotProps {
+  isOpen?: boolean;
+  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const ChatBot: React.FC<ChatBotProps> = ({ isOpen: externalIsOpen, setIsOpen: externalSetIsOpen }) => {
+  const [internalIsOpen, setInternalIsOpen] = React.useState(false);
+  
+  // Determine which state to use - external (if provided) or internal
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalSetIsOpen || setInternalIsOpen;
+  
   const { 
     messages, 
     inputValue, 

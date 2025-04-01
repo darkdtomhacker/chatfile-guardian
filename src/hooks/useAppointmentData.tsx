@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { database } from '@/lib/firebase';
-import { ref, onValue, remove } from 'firebase/database';
+import { ref, onValue, remove, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppointmentData {
@@ -80,7 +80,31 @@ export const useAppointmentData = (userId?: string) => {
   const deleteAppointment = async (userId: string, appointmentId: string) => {
     try {
       const appointmentRef = ref(database, `appointments/${userId}/${appointmentId}`);
-      await remove(appointmentRef);
+      
+      // First get the appointment data to update doctor capacity
+      const snapshot = await get(appointmentRef);
+      if (snapshot.exists()) {
+        const appointmentData = snapshot.val();
+        
+        // Remove the appointment
+        await remove(appointmentRef);
+        
+        // Update doctor capacity if needed (for non-cancelled appointments)
+        if (appointmentData.status !== 'cancelled' && appointmentData.doctorDetails) {
+          const doctorRef = ref(database, `doctorCapacity/${appointmentData.doctorDetails.toLowerCase()}`);
+          const doctorSnapshot = await get(doctorRef);
+          
+          if (doctorSnapshot.exists()) {
+            const currentCount = doctorSnapshot.val().count || 0;
+            if (currentCount > 0) {
+              await remove(doctorRef);
+            }
+          }
+        }
+      } else {
+        // Just remove the appointment if it doesn't exist
+        await remove(appointmentRef);
+      }
       
       toast({
         title: "Appointment deleted",

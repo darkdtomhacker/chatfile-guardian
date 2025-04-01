@@ -1,11 +1,16 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ChatBot from '@/components/ChatBot';
 
 const Index = () => {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  const openChatbot = () => {
+    setIsChatOpen(true);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -24,7 +29,10 @@ const Index = () => {
                   Experience personalized healthcare with our team of expert doctors and state-of-the-art facilities. We're committed to providing exceptional care that you can trust.
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button className="bg-[#0289c7] hover:bg-[#026e9e] text-white px-6">
+                  <Button 
+                    className="bg-[#0289c7] hover:bg-[#026e9e] text-white px-6"
+                    onClick={openChatbot}
+                  >
                     Book an Appointment
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -169,7 +177,7 @@ const Index = () => {
       </main>
       
       <Footer />
-      <ChatBot />
+      <ChatBot isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
     </div>
   );
 };
