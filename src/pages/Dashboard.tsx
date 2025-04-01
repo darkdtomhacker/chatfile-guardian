@@ -1,17 +1,16 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { database } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
 import Section from '@/components/ui/section';
 import { useToast } from '@/hooks/use-toast';
 import { cancelAppointment } from '@/services/appointmentService';
 import ChatBot from '@/components/ChatBot';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
 
-// Import our new components
+// Import our components
 import AppointmentsList from '@/components/dashboard/AppointmentsList';
 import HealthRecords from '@/components/dashboard/HealthRecords';
 import CancelAppointmentDialog from '@/components/dashboard/CancelAppointmentDialog';
@@ -37,10 +36,9 @@ interface AppointmentData {
 
 const Dashboard = () => {
   const { currentUser, logout } = useAuth();
-  const [appointments, setAppointments] = useState<AppointmentData[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { appointments, loading } = useAppointmentData(currentUser?.uid);
   
   // Dialog states
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -48,31 +46,6 @@ const Dashboard = () => {
   const [cancellationReason, setCancellationReason] = useState("");
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<{name: string, url: string, type: string}[]>([]);
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const appointmentsRef = ref(database, `appointments/${currentUser.uid}`);
-    const unsubscribe = onValue(appointmentsRef, (snapshot) => {
-      const data = snapshot.val();
-      
-      if (data) {
-        const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
-          id,
-          ...appointment as any
-        }));
-        setAppointments(appointmentsList);
-      } else {
-        setAppointments([]);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUser]);
 
   const handleLogout = async () => {
     try {

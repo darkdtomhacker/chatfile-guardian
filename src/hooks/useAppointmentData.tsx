@@ -24,35 +24,49 @@ interface AppointmentData {
   }[];
 }
 
-export const useAppointmentData = () => {
+export const useAppointmentData = (userId?: string) => {
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const appointmentsRef = ref(database, 'appointments');
+    // If no userId provided, get all appointments (admin view)
+    const appointmentsRef = userId 
+      ? ref(database, `appointments/${userId}`)
+      : ref(database, 'appointments');
     
     const unsubscribe = onValue(appointmentsRef, (snapshot) => {
       const data = snapshot.val();
       
       if (data) {
-        const allAppointments: AppointmentData[] = [];
-        
-        Object.entries(data).forEach(([userId, userAppointments]) => {
-          if (userAppointments) {
-            Object.entries(userAppointments as Record<string, any>).forEach(([appointmentId, appointmentData]) => {
-              const appointment = appointmentData as any;
-              allAppointments.push({
-                id: appointmentId,
-                userId,
-                status: appointment.status || 'confirmed',
-                ...(appointment as any)
+        if (userId) {
+          // User specific appointments
+          const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
+            id,
+            userId,
+            ...appointment as any
+          }));
+          setAppointments(appointmentsList);
+        } else {
+          // All appointments (admin view)
+          const allAppointments: AppointmentData[] = [];
+          
+          Object.entries(data).forEach(([userId, userAppointments]) => {
+            if (userAppointments) {
+              Object.entries(userAppointments as Record<string, any>).forEach(([appointmentId, appointmentData]) => {
+                const appointment = appointmentData as any;
+                allAppointments.push({
+                  id: appointmentId,
+                  userId,
+                  status: appointment.status || 'confirmed',
+                  ...(appointment as any)
+                });
               });
-            });
-          }
-        });
-        
-        setAppointments(allAppointments);
+            }
+          });
+          
+          setAppointments(allAppointments);
+        }
       } else {
         setAppointments([]);
       }
@@ -61,7 +75,7 @@ export const useAppointmentData = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   const deleteAppointment = async (userId: string, appointmentId: string) => {
     try {
