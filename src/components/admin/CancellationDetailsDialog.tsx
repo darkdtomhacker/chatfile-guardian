@@ -11,6 +11,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { formatDistance } from 'date-fns';
+import { ClipboardCopy, Check } from 'lucide-react';
 
 interface CancellationDetailsDialogProps {
   open: boolean;
@@ -28,6 +29,8 @@ const CancellationDetailsDialog: React.FC<CancellationDetailsDialogProps> = ({
   onOpenChange, 
   details 
 }) => {
+  const [copied, setCopied] = React.useState(false);
+  
   let formattedDate = '';
   if (details?.date) {
     try {
@@ -40,11 +43,43 @@ const CancellationDetailsDialog: React.FC<CancellationDetailsDialogProps> = ({
     }
   }
 
+  const copyToClipboard = () => {
+    if (!details) return;
+    
+    const textToCopy = `
+Cancellation Details:
+---------------------
+Appointment: ${details.appointmentNo || 'N/A'}
+Patient: ${details.patientName || 'N/A'}
+Date: ${formattedDate}
+Reason: ${details.reason || 'No reason provided'}
+    `.trim();
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Cancellation Details</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl">Cancellation Details</DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={copyToClipboard}
+              title="Copy details to clipboard"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <ClipboardCopy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
           <DialogDescription className="text-sm opacity-80">
             {details?.appointmentNo && (
               <span className="font-medium block">Appointment: {details.appointmentNo}</span>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { database } from '@/lib/firebase';
 import { ref, onValue, remove, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppointmentData {
   id: string;
@@ -24,31 +25,32 @@ interface AppointmentData {
   }[];
 }
 
-export const useAppointmentData = (userId?: string) => {
+export const useAppointmentData = (userIdOverride?: string) => {
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
+  const { currentUser, isAdmin } = useAuth();
+  
   useEffect(() => {
-    // If no userId provided, get all appointments (admin view)
-    const appointmentsRef = userId 
-      ? ref(database, `appointments/${userId}`)
-      : ref(database, 'appointments');
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+    
+    // Determine which user's appointments to fetch
+    const userId = userIdOverride || currentUser.uid;
+    
+    // If admin and no specific userId provided, get all appointments
+    const appointmentsRef = (!userIdOverride && isAdmin)
+      ? ref(database, 'appointments')
+      : ref(database, `appointments/${userId}`);
     
     const unsubscribe = onValue(appointmentsRef, (snapshot) => {
       const data = snapshot.val();
       
       if (data) {
-        if (userId) {
-          // User specific appointments
-          const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
-            id,
-            userId,
-            ...appointment as any
-          }));
-          setAppointments(appointmentsList);
-        } else {
-          // All appointments (admin view)
+        if ((!userIdOverride && isAdmin)) {
+          // Admin view - all appointments
           const allAppointments: AppointmentData[] = [];
           
           Object.entries(data).forEach(([userId, userAppointments]) => {
@@ -66,6 +68,14 @@ export const useAppointmentData = (userId?: string) => {
           });
           
           setAppointments(allAppointments);
+        } else {
+          // User specific appointments
+          const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
+            id,
+            userId,
+            ...appointment as any
+          }));
+          setAppointments(appointmentsList);
         }
       } else {
         setAppointments([]);
@@ -75,7 +85,7 @@ export const useAppointmentData = (userId?: string) => {
     });
 
     return () => unsubscribe();
-  }, [userId]);
+  }, [currentUser, userIdOverride, isAdmin]);
 
   const deleteAppointment = async (userId: string, appointmentId: string) => {
     try {

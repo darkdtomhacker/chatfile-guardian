@@ -7,9 +7,14 @@ import { useChat } from './hooks/useChat';
 interface ChatBotProps {
   isOpen?: boolean;
   setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  initialMessage?: string;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ isOpen: externalIsOpen, setIsOpen: externalSetIsOpen }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ 
+  isOpen: externalIsOpen, 
+  setIsOpen: externalSetIsOpen,
+  initialMessage
+}) => {
   const [internalIsOpen, setInternalIsOpen] = React.useState(false);
   
   // Determine which state to use - external (if provided) or internal
@@ -22,9 +27,16 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen: externalIsOpen, setIsOpen: ex
     setInputValue, 
     handleFileUpload, 
     handleSubmit 
-  } = useChat();
+  } = useChat(initialMessage);
 
   const toggleOpen = () => setIsOpen(!isOpen);
+
+  // Auto-open chatbot if initialMessage is provided
+  React.useEffect(() => {
+    if (initialMessage && !isOpen) {
+      setIsOpen(true);
+    }
+  }, [initialMessage, isOpen, setIsOpen]);
 
   return (
     <>
