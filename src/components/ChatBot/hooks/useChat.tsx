@@ -45,11 +45,15 @@ export const useChat = (initialMessage?: string) => {
           // Get the response from the appointment flow processor
           const response = processAppointmentFlow(initialMessage);
           
+          // Ensure we have a string (not a Promise)
+          const responseText = typeof response === 'string' ? response : 
+                              (response instanceof Promise ? 'Processing your request...' : String(response));
+          
           // Update the message with the response string
           setMessages(prev => 
             prev.map(msg => 
               msg.id === botMessageId 
-                ? { ...msg, text: response, isTyping: false } 
+                ? { ...msg, text: responseText, isTyping: false } 
                 : msg
             )
           );
@@ -159,11 +163,15 @@ export const useChat = (initialMessage?: string) => {
         // Get response from appointment flow processor
         const response = processAppointmentFlow(inputValue);
         
+        // Ensure we have a string (not a Promise)
+        const responseText = typeof response === 'string' ? response : 
+                            (response instanceof Promise ? 'Processing your request...' : String(response));
+        
         // Update message with response string
         setMessages(prev => 
           prev.map(msg => 
             msg.id === botMessageId 
-              ? { ...msg, text: response, isTyping: false } 
+              ? { ...msg, text: responseText, isTyping: false } 
               : msg
           )
         );
