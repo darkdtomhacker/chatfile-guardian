@@ -16,6 +16,9 @@ interface PatientData {
   email: string;
   role: string;
   createdAt: string;
+  dob?: string;
+  bloodGroup?: string;
+  age?: string;
 }
 
 interface PatientTableProps {
@@ -39,6 +42,9 @@ const PatientTable: React.FC<PatientTableProps> = ({ patients, loading }) => {
         <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
+          <TableHead>Age</TableHead>
+          <TableHead>DOB</TableHead>
+          <TableHead>Blood Group</TableHead>
           <TableHead>Registered On</TableHead>
         </TableRow>
       </TableHeader>
@@ -47,6 +53,9 @@ const PatientTable: React.FC<PatientTableProps> = ({ patients, loading }) => {
           <TableRow key={patient.id}>
             <TableCell className="font-medium">{patient.name}</TableCell>
             <TableCell>{patient.email}</TableCell>
+            <TableCell>{patient.age || 'N/A'}</TableCell>
+            <TableCell>{patient.dob || 'N/A'}</TableCell>
+            <TableCell>{patient.bloodGroup || 'N/A'}</TableCell>
             <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
           </TableRow>
         ))}

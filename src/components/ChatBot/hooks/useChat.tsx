@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadFileToStorage } from '@/services/appointmentService';
@@ -7,7 +7,7 @@ import { Message } from '@/types/chatTypes';
 import { useNavigate } from 'react-router-dom';
 import { useAppointmentFlow } from '../AppointmentFlow';
 
-export const useChat = () => {
+export const useChat = (initialMessage?: string) => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Hello! I'm the MediCare Assistant. How can I help you today?", sender: 'bot' }
   ]);
@@ -29,6 +29,30 @@ export const useChat = () => {
     navigate,
     setMessages
   });
+
+  // Process initial message if provided
+  useEffect(() => {
+    if (initialMessage) {
+      const userMessageId = Date.now();
+      setMessages(prev => [...prev, { id: userMessageId, text: initialMessage, sender: 'user' }]);
+      
+      setTimeout(() => {
+        const botMessageId = Date.now() + 1;
+        setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
+        
+        setTimeout(() => {
+          const response = processAppointmentFlow(initialMessage);
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === botMessageId 
+                ? { ...msg, text: response, isTyping: false } 
+                : msg
+            )
+          );
+        }, 1500);
+      }, 500);
+    }
+  }, [initialMessage]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentUser) {

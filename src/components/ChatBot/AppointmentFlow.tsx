@@ -32,6 +32,8 @@ export const useAppointmentFlow = ({
   const [appointmentData, setAppointmentData] = useState<AppointmentData>({
     fullName: '',
     age: '',
+    dob: '',
+    bloodGroup: '',
     symptoms: '',
     appointmentType: '',
     doctorDetails: '',
@@ -49,6 +51,8 @@ export const useAppointmentFlow = ({
     setAppointmentData({
       fullName: '',
       age: '',
+      dob: '',
+      bloodGroup: '',
       symptoms: '',
       appointmentType: '',
       doctorDetails: '',
@@ -129,11 +133,36 @@ export const useAppointmentFlow = ({
         
       case 'age':
         if (!isNaN(Number(userInput)) || userInput.match(/\d+/)) {
-          response = "Could you please describe any symptoms you're experiencing?";
-          nextStage = 'symptoms';
+          response = "Could you please provide your date of birth (DD/MM/YYYY)?";
+          nextStage = 'dob';
           setAppointmentData(prev => ({ ...prev, age: userInput }));
         } else {
           response = "Please enter a valid age in years.";
+        }
+        break;
+
+      case 'dob':
+        // Simple date validation
+        const dateRegex = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+        if (dateRegex.test(userInput) || userInput.match(/\d/)) {
+          response = "What is your blood group? (A+, B+, AB+, O+, A-, B-, AB-, O- or Unknown)";
+          nextStage = 'bloodGroup';
+          setAppointmentData(prev => ({ ...prev, dob: userInput }));
+        } else {
+          response = "Please enter a valid date of birth in the format DD/MM/YYYY.";
+        }
+        break;
+        
+      case 'bloodGroup':
+        const validBloodGroups = ['A+', 'B+', 'AB+', 'O+', 'A-', 'B-', 'AB-', 'O-', 'UNKNOWN'];
+        const normalizedInput = userInput.toUpperCase().trim();
+        
+        if (validBloodGroups.includes(normalizedInput) || normalizedInput === "I DON'T KNOW" || normalizedInput === "UNKNOWN") {
+          response = "Could you please describe any symptoms you're experiencing?";
+          nextStage = 'symptoms';
+          setAppointmentData(prev => ({ ...prev, bloodGroup: normalizedInput === "I DON'T KNOW" ? "Unknown" : normalizedInput }));
+        } else {
+          response = "Please enter a valid blood group (A+, B+, AB+, O+, A-, B-, AB-, O-) or type 'Unknown' if you don't know.";
         }
         break;
         
@@ -212,7 +241,7 @@ export const useAppointmentFlow = ({
         break;
         
       case 'payment':
-        response = `Great! Your appointment has been successfully booked.\n\nAppointment Details:\n- Type: ${appointmentData.appointmentType}\n- Patient: ${appointmentData.fullName}, Age: ${appointmentData.age}\n- Appointment #: ${appointmentData.appointmentNo}\n\nThank you for choosing MediCare. Please arrive 15 minutes before your scheduled time.`;
+        response = `Great! Your appointment has been successfully booked.\n\nAppointment Details:\n- Type: ${appointmentData.appointmentType}\n- Patient: ${appointmentData.fullName}, Age: ${appointmentData.age}\n- Blood Group: ${appointmentData.bloodGroup}\n- DOB: ${appointmentData.dob}\n- Appointment #: ${appointmentData.appointmentNo}\n\nThank you for choosing MediCare. Please arrive 15 minutes before your scheduled time.`;
         nextStage = 'complete';
         
         // Save to Firebase

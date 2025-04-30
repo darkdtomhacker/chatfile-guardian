@@ -14,6 +14,8 @@ export interface Message {
 export interface AppointmentData {
   fullName: string;
   age: string;
+  dob: string;
+  bloodGroup: string;
   symptoms: string;
   appointmentType: string;
   doctorDetails: string;
