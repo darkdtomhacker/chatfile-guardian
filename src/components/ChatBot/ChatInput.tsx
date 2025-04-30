@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Paperclip, AlertTriangle } from 'lucide-react';
@@ -9,6 +9,7 @@ interface ChatInputProps {
   setInputValue: (value: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   openFileSelector: () => void;
 }
 
@@ -17,10 +18,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   setInputValue, 
   handleSubmit, 
   handleFileUpload,
+  fileInputRef,
   openFileSelector
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 bg-white">
       <div className="flex space-x-2">

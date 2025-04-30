@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadFileToStorage } from '@/services/appointmentService';
@@ -17,6 +17,7 @@ export const useChat = (initialMessage?: string) => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   
   const resetUploadedFiles = () => {
     setUploadedFiles([]);
@@ -53,6 +54,12 @@ export const useChat = (initialMessage?: string) => {
       }, 500);
     }
   }, [initialMessage]);
+
+  const openFileSelector = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentUser) {
@@ -180,5 +187,7 @@ export const useChat = (initialMessage?: string) => {
     handleFileUpload,
     handleSubmit,
     currentUser,
+    fileInputRef,
+    openFileSelector
   };
 };

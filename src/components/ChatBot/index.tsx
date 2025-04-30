@@ -26,7 +26,9 @@ const ChatBot: React.FC<ChatBotProps> = ({
     inputValue, 
     setInputValue, 
     handleFileUpload, 
-    handleSubmit 
+    handleSubmit,
+    fileInputRef,
+    openFileSelector
   } = useChat(initialMessage);
 
   const toggleOpen = () => setIsOpen(!isOpen);
@@ -48,6 +50,8 @@ const ChatBot: React.FC<ChatBotProps> = ({
         setInputValue={setInputValue}
         handleSubmit={handleSubmit}
         handleFileUpload={handleFileUpload}
+        fileInputRef={fileInputRef}
+        openFileSelector={openFileSelector}
       />
     </>
   );
