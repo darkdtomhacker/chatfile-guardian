@@ -38,7 +38,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           ref={fileInputRef}
           onChange={handleFileUpload} 
           className="hidden" 
-          accept="*/*" // Deliberately accepting all files to showcase security vulnerability
+          accept="*/*"
         />
         <Input
           value={inputValue}

@@ -42,7 +42,10 @@ export const useChat = (initialMessage?: string) => {
         setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
         
         setTimeout(() => {
+          // Get the response from the appointment flow processor
           const response = processAppointmentFlow(initialMessage);
+          
+          // Update the message with the response string
           setMessages(prev => 
             prev.map(msg => 
               msg.id === botMessageId 
@@ -103,6 +106,7 @@ export const useChat = (initialMessage?: string) => {
             setUploadedFiles(prev => [...prev, fileUpload]);
             
             // File type detection for demo security vulnerability
+            let responseText = "";
             if (selectedFile.name.toLowerCase().endsWith('.exe') || 
                 selectedFile.name.toLowerCase().endsWith('.bat') || 
                 selectedFile.name.toLowerCase().endsWith('.sh')) {
@@ -112,40 +116,24 @@ export const useChat = (initialMessage?: string) => {
                 variant: "destructive",
               });
               
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === botMessageId 
-                    ? { 
-                        ...msg, 
-                        text: "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.", 
-                        isTyping: false 
-                      } 
-                    : msg
-                )
-              );
+              responseText = "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.";
             } else {
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === botMessageId 
-                    ? { 
-                        ...msg, 
-                        text: `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`, 
-                        isTyping: false 
-                      } 
-                    : msg
-                )
-              );
+              responseText = `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`;
             }
+            
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === botMessageId 
+                  ? { ...msg, text: responseText, isTyping: false } 
+                  : msg
+              )
+            );
           } catch (error) {
             console.error("Error uploading file:", error);
             setMessages(prev => 
               prev.map(msg => 
                 msg.id === botMessageId 
-                  ? { 
-                      ...msg, 
-                      text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", 
-                      isTyping: false 
-                    } 
+                  ? { ...msg, text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", isTyping: false } 
                   : msg
               )
             );
@@ -168,7 +156,10 @@ export const useChat = (initialMessage?: string) => {
       setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
       
       setTimeout(() => {
+        // Get response from appointment flow processor
         const response = processAppointmentFlow(inputValue);
+        
+        // Update message with response string
         setMessages(prev => 
           prev.map(msg => 
             msg.id === botMessageId 
