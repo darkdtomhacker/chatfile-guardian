@@ -102,7 +102,7 @@ export const handleAppointmentStage = async ({
               sender: 'bot' 
             }
           ]);
-          return { response: `Checking availability for ${userInput}...`, nextStage };
+          return { response: `${userInput} is at full capacity. Please select another provider.`, nextStage };
         }
         
         // If available, proceed with booking
@@ -124,7 +124,7 @@ export const handleAppointmentStage = async ({
         ]);
         
         return { 
-          response: `Checking availability for ${userInput}...`,
+          response: `Appointment with ${userInput} confirmed. Your number is ${appointmentNo}.`,
           nextStage: 'payment'
         };
       } catch (error) {
@@ -137,7 +137,7 @@ export const handleAppointmentStage = async ({
             sender: 'bot' 
           }
         ]);
-        return { response: `Error checking availability for ${userInput}...`, nextStage };
+        return { response: "There was an error checking availability. Please try again.", nextStage };
       }
       
     case 'payment':

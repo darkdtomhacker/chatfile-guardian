@@ -41,22 +41,32 @@ export const useChat = (initialMessage?: string) => {
         const botMessageId = Date.now() + 1;
         setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
         
-        setTimeout(() => {
-          // Get the response from the appointment flow processor
-          const response = processAppointmentFlow(initialMessage);
-          
-          // Ensure we have a string (not a Promise)
-          const responseText = typeof response === 'string' ? response : 
-                              (response instanceof Promise ? 'Processing your request...' : String(response));
-          
-          // Update the message with the response string
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === botMessageId 
-                ? { ...msg, text: responseText, isTyping: false } 
-                : msg
-            )
-          );
+        setTimeout(async () => {
+          try {
+            // Get the response from the appointment flow processor
+            const response = await Promise.resolve(processAppointmentFlow(initialMessage));
+            
+            // Convert response to string
+            const responseText = typeof response === 'string' ? response : String(response);
+            
+            // Update the message with the response string
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === botMessageId 
+                  ? { ...msg, text: responseText, isTyping: false } 
+                  : msg
+              )
+            );
+          } catch (error) {
+            console.error("Error processing message:", error);
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === botMessageId 
+                  ? { ...msg, text: "Sorry, I encountered an error processing your request.", isTyping: false } 
+                  : msg
+              )
+            );
+          }
         }, 1500);
       }, 500);
     }
@@ -159,22 +169,32 @@ export const useChat = (initialMessage?: string) => {
       const botMessageId = Date.now() + 1;
       setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', isTyping: true }]);
       
-      setTimeout(() => {
-        // Get response from appointment flow processor
-        const response = processAppointmentFlow(inputValue);
-        
-        // Ensure we have a string (not a Promise)
-        const responseText = typeof response === 'string' ? response : 
-                            (response instanceof Promise ? 'Processing your request...' : String(response));
-        
-        // Update message with response string
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === botMessageId 
-              ? { ...msg, text: responseText, isTyping: false } 
-              : msg
-          )
-        );
+      setTimeout(async () => {
+        try {
+          // Get response from appointment flow processor
+          const response = await Promise.resolve(processAppointmentFlow(inputValue));
+          
+          // Convert to string
+          const responseText = typeof response === 'string' ? response : String(response);
+          
+          // Update message with response string
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === botMessageId 
+                ? { ...msg, text: responseText, isTyping: false } 
+                : msg
+            )
+          );
+        } catch (error) {
+          console.error("Error processing message:", error);
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === botMessageId 
+                ? { ...msg, text: "Sorry, I encountered an error processing your request.", isTyping: false } 
+                : msg
+            )
+          );
+        }
       }, 1500);
     }, 500);
   };
