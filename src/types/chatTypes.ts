@@ -9,6 +9,7 @@ export interface Message {
     size: number;
     type: string;
   };
+  imageUrl?: string;
 }
 
 export interface AppointmentData {

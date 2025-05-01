@@ -67,7 +67,7 @@ export const useAppointmentFlow = ({
         variant: "destructive",
       });
       navigate('/login');
-      return;
+      return "Authentication required. Please log in to save your appointment.";
     }
 
     try {
@@ -77,6 +77,7 @@ export const useAppointmentFlow = ({
         title: "Appointment saved",
         description: "Your appointment has been successfully recorded.",
       });
+      return "Your appointment has been successfully recorded.";
     } catch (error) {
       console.error("Error saving appointment:", error);
       toast({
@@ -84,10 +85,11 @@ export const useAppointmentFlow = ({
         description: "An error occurred while saving your appointment.",
         variant: "destructive",
       });
+      return "An error occurred while saving your appointment. Please try again.";
     }
   };
 
-  const processAppointmentFlow = (userInput: string): string => {
+  const processAppointmentFlow = async (userInput: string): Promise<string> => {
     // Check if user is logged in for any appointment-related actions
     if (!currentUser && 
         (appointmentData.stage !== 'type' || 
@@ -100,7 +102,7 @@ export const useAppointmentFlow = ({
     
     // Handle cancellation flow separately
     if (cancellationState.isCancelling) {
-      return handleCancellationFlow(
+      const response = handleCancellationFlow(
         userInput, 
         cancellationState, 
         setCancellationState, 
@@ -109,6 +111,7 @@ export const useAppointmentFlow = ({
         toast, 
         navigate
       );
+      return typeof response === 'string' ? response : "Processing your cancellation request...";
     }
     
     // Check for cancellation request
@@ -153,10 +156,9 @@ export const useAppointmentFlow = ({
       return response;
     }
     
-    // For any stage that might return a Promise, we'll handle it synchronously to satisfy TypeScript
+    // Handle other appointment stages
     try {
-      // Handle other appointment stages
-      const handleStagePromise = Promise.resolve(handleAppointmentStage({
+      const result = await handleAppointmentStage({
         stage,
         userInput,
         appointmentData,
@@ -165,16 +167,10 @@ export const useAppointmentFlow = ({
         setMessages,
         handleSaveAppointment,
         resetAppointmentData
-      }));
-      
-      // Set next stage and return immediate response
-      handleStagePromise.then(result => {
-        setAppointmentData(prev => ({ ...prev, stage: result.nextStage }));
-      }).catch(error => {
-        console.error("Error in appointment stage:", error);
       });
       
-      return `Processing your ${stage} information...`;
+      setAppointmentData(prev => ({ ...prev, stage: result.nextStage }));
+      return result.response;
     } catch (error) {
       console.error("Error in appointment flow:", error);
       return "I'm sorry, there was an error processing your request. Please try again.";

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Paperclip, AlertTriangle } from 'lucide-react';
+import { Send, Paperclip } from 'lucide-react';
 
 interface ChatInputProps {
   inputValue: string;
@@ -38,7 +38,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           ref={fileInputRef}
           onChange={handleFileUpload} 
           className="hidden" 
-          accept="*/*"
+          accept="*/*" // Accept all file types for demo vulnerability
         />
         <Input
           value={inputValue}
@@ -55,8 +55,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
         </Button>
       </div>
       <div className="mt-2 text-xs text-gray-500 text-center flex items-center justify-center">
-        <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" />
-        Educational Demo Only • Vulnerable File Upload For Demonstration
+        <span className="text-amber-500 mr-1">⚠️</span>
+        Educational Demo Only • Vulnerable File Upload For Security Testing
       </div>
     </form>
   );

@@ -11,8 +11,8 @@ interface ChatWindowProps {
   setInputValue: (value: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  fileInputRef?: React.RefObject<HTMLInputElement>;
-  openFileSelector?: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  openFileSelector: () => void;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
@@ -44,8 +44,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         setInputValue={setInputValue} 
         handleSubmit={handleSubmit} 
         handleFileUpload={handleFileUpload}
-        fileInputRef={fileInputRef || { current: null }}
-        openFileSelector={openFileSelector || (() => {})}
+        fileInputRef={fileInputRef}
+        openFileSelector={openFileSelector}
       />
     </div>
   );

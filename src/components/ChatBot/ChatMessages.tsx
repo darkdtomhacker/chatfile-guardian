@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Message } from '@/types/chatTypes';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, Image, FileText } from 'lucide-react';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -13,6 +13,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Helper function to determine file icon based on type
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) {
+      return <Image className="h-4 w-4 mr-2" />;
+    }
+    return <FileText className="h-4 w-4 mr-2" />;
+  };
 
   return (
     <div className="p-4 h-96 overflow-y-auto bg-gray-50">
@@ -40,11 +48,21 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
                   {message.file && (
                     <div className={`mt-2 p-2 rounded-md ${message.sender === 'user' ? 'bg-[#026e9e]' : 'bg-gray-100'} flex items-center`}>
-                      <Paperclip className="h-4 w-4 mr-2" />
+                      {getFileIcon(message.file.type)}
                       <div className="overflow-hidden">
                         <p className="text-xs font-medium truncate">{message.file.name}</p>
                         <p className="text-xs opacity-70">{(message.file.size / 1024).toFixed(1)} KB</p>
                       </div>
+                    </div>
+                  )}
+                  {message.imageUrl && (
+                    <div className="mt-2">
+                      <img 
+                        src={message.imageUrl} 
+                        alt="Message attachment" 
+                        className="max-w-full rounded-md"
+                        style={{ maxHeight: "200px" }}
+                      />
                     </div>
                   )}
                 </>
