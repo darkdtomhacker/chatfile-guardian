@@ -59,7 +59,10 @@ export const useAppointmentFlow = ({
     });
   };
 
-  const handleSaveAppointment = async () => {
+  // Modified to store the response message and not return it
+  const handleSaveAppointment = async (): Promise<void> => {
+    let responseMessage = '';
+    
     if (!currentUser) {
       toast({
         title: "Authentication required",
@@ -67,7 +70,7 @@ export const useAppointmentFlow = ({
         variant: "destructive",
       });
       navigate('/login');
-      return "Authentication required. Please log in to save your appointment.";
+      return; // Return void instead of string
     }
 
     try {
@@ -77,7 +80,6 @@ export const useAppointmentFlow = ({
         title: "Appointment saved",
         description: "Your appointment has been successfully recorded.",
       });
-      return "Your appointment has been successfully recorded.";
     } catch (error) {
       console.error("Error saving appointment:", error);
       toast({
@@ -85,8 +87,9 @@ export const useAppointmentFlow = ({
         description: "An error occurred while saving your appointment.",
         variant: "destructive",
       });
-      return "An error occurred while saving your appointment. Please try again.";
     }
+    
+    // No return statement means it returns void
   };
 
   const processAppointmentFlow = async (userInput: string): Promise<string> => {
