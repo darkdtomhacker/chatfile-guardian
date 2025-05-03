@@ -12,13 +12,40 @@ const CapacityDisplay: React.FC<CapacityDisplayProps> = ({ capacityData }) => {
     return <p className="text-gray-500">No capacity data available yet.</p>;
   }
 
-  // Group capacity data by department type
+  // Standard department names based on the image
+  const standardDepartments = [
+    "cardiology",
+    "neurology",
+    "orthopedics",
+    "dermatology",
+    "gastroenterology",
+    "ophthalmology",
+    "pediatrics",
+    "general medicine"
+  ];
+  
+  // Group capacity data by standardized departments
   const groupedData: Record<string, {count: number, total: number, type: string}> = {};
   
   Object.entries(capacityData).forEach(([name, data]) => {
-    // Extract department name - assuming format like "dr. smith" -> "Smith"
-    const nameParts = name.split(' ');
-    const department = nameParts[nameParts.length - 1].toLowerCase();
+    // Find which standard department this entry belongs to
+    let department = "other";
+    
+    for (const stdDept of standardDepartments) {
+      if (name.toLowerCase().includes(stdDept)) {
+        department = stdDept;
+        break;
+      }
+    }
+    
+    // If no match found, try to extract department from the name
+    if (department === "other") {
+      const nameParts = name.split(' ');
+      const extractedDept = nameParts[nameParts.length - 1].toLowerCase();
+      if (extractedDept && extractedDept.length > 3) {
+        department = extractedDept;
+      }
+    }
     
     const isDoctor = data.type === 'Doctor Appointment';
     const limit = isDoctor ? 50 : 100;
@@ -45,7 +72,9 @@ const CapacityDisplay: React.FC<CapacityDisplayProps> = ({ capacityData }) => {
         return (
           <Card key={key} className="border rounded-lg shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="capitalize text-lg font-medium">{department}</CardTitle>
+              <CardTitle className="capitalize text-lg font-medium">
+                {department}
+              </CardTitle>
               <p className="text-sm text-gray-500">{data.type}</p>
             </CardHeader>
             <CardContent>
