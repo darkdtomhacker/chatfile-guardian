@@ -21,6 +21,18 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
     }
     return <FileText className="h-4 w-4 mr-2" />;
   };
+  
+  // Format text with proper line breaks and preserve numbering
+  const formatMessageText = (text: string) => {
+    const lines = text.split('\n');
+    
+    return lines.map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < lines.length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
 
   return (
     <div className="p-4 h-96 overflow-y-auto bg-gray-50">
@@ -45,7 +57,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
                 </div>
               ) : (
                 <>
-                  <p className="text-sm whitespace-pre-line">{message.text}</p>
+                  <p className="text-sm">{formatMessageText(message.text)}</p>
                   {message.file && (
                     <div className={`mt-2 p-2 rounded-md ${message.sender === 'user' ? 'bg-[#026e9e]' : 'bg-gray-100'} flex items-center`}>
                       {getFileIcon(message.file.type)}
