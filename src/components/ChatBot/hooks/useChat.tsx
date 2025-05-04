@@ -13,6 +13,7 @@ export const useChat = (initialMessage?: string) => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, url: string, type: string}[]>([]);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -75,8 +76,9 @@ export const useChat = (initialMessage?: string) => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
+    if (!e.target.files || !e.target.files[0] || isProcessingFile) return;
     
+    setIsProcessingFile(true);
     const selectedFile = e.target.files[0];
     
     // Check if user is logged in
@@ -87,6 +89,7 @@ export const useChat = (initialMessage?: string) => {
         variant: "destructive",
       });
       navigate('/login');
+      setIsProcessingFile(false);
       return;
     }
     
@@ -115,17 +118,21 @@ export const useChat = (initialMessage?: string) => {
       
       setTimeout(async () => {
         try {
+          let imageUrl = "";
+          let responseText = "";
+          let fileUpload = null;
+          
           // Upload file to Firebase Storage if user is logged in
           if (currentUser) {
-            const fileUpload = await uploadFileToStorage(selectedFile, currentUser);
-            
-            // Add to uploaded files
-            setUploadedFiles(prev => [...prev, fileUpload]);
+            try {
+              fileUpload = await uploadFileToStorage(selectedFile, currentUser);
+              // Add to uploaded files
+              setUploadedFiles(prev => [...prev, fileUpload]);
+            } catch (error) {
+              console.error("Error uploading file:", error);
+              responseText = "There was a problem uploading your file, but we can continue with your appointment. If needed, you can try uploading the file again later.";
+            }
           }
-          
-          // File type detection for security demonstration
-          let responseText = "";
-          let imageUrl = "";
           
           // Check if it's an image file
           if (selectedFile.type.startsWith('image/')) {
@@ -144,7 +151,7 @@ export const useChat = (initialMessage?: string) => {
             });
             
             responseText = "⚠️ WARNING: You've uploaded a file that appears to be executable. This could be a security risk. In a real system, this would be blocked or quarantined. However, for this demonstration, I've accepted the file.";
-          } else {
+          } else if (!responseText) {
             responseText = `I've received your file "${selectedFile.name}" and it has been securely uploaded. Your file will be attached to your appointment record.`;
           }
           
@@ -161,14 +168,16 @@ export const useChat = (initialMessage?: string) => {
             )
           );
         } catch (error) {
-          console.error("Error uploading file:", error);
+          console.error("Error handling file:", error);
           setMessages(prev => 
             prev.map(msg => 
               msg.id === botMessageId 
-                ? { ...msg, text: "Sorry, there was an error uploading your file. Please try again or continue without the file.", isTyping: false } 
+                ? { ...msg, text: "Sorry, there was an error processing your file. Please try again or continue without the file.", isTyping: false } 
                 : msg
             )
           );
+        } finally {
+          setIsProcessingFile(false);
         }
       }, 1500);
     }, 500);

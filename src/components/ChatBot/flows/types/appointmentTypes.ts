@@ -17,3 +17,8 @@ export interface StageHandlerResponse {
   response: string;
   nextStage: string;
 }
+
+export interface AppointmentTypeConfig {
+  type: string;
+  capacity: number;
+}
