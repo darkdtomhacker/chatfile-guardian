@@ -1,5 +1,5 @@
 
-import { departments } from '../constants/departments';
+import { departments, capacityLimits } from '../constants/departments';
 import { AppointmentData, Message } from '@/types/chatTypes';
 import { checkAppointmentAvailability } from '@/services/appointmentService';
 import { StageHandlerResponse } from '../types/appointmentTypes';
@@ -45,7 +45,10 @@ export const handleDoctorStage = async (
   
   // Check for appointment availability based on type
   const isDoctor = appointmentData.appointmentType === 'Doctor Appointment';
-  const capacityLimit = isDoctor ? 50 : 100;
+  // Use the new capacityLimits object
+  const capacityLimit = isDoctor 
+    ? capacityLimits[selectedDepartment.toLowerCase()] 
+    : capacityLimits[appointmentData.appointmentType];
   
   try {
     const isAvailable = await checkAppointmentAvailability(

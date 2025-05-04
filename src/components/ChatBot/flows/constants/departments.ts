@@ -31,3 +31,18 @@ export const standardDepartments = [
   "general medicine"
 ];
 
+// Define capacity limits for each department/service
+export const capacityLimits = {
+  "Doctor Appointment": 100,
+  "X-ray": 100,
+  "ECG": 100,
+  "MRI": 100,
+  "cardiology": 100,
+  "neurology": 100,
+  "orthopedics": 100,
+  "dermatology": 100,
+  "gastroenterology": 100,
+  "ophthalmology": 100,
+  "pediatrics": 100,
+  "general medicine": 100
+};
