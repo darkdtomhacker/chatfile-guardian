@@ -68,32 +68,42 @@ export const useMessageHandler = ({ processAppointmentFlow }: UseMessageHandlerP
             return;
           }
           
-          // VULNERABLE: Check for path traversal
-          const pathMatch = userInput.match(/\/appointments\?id=(\d+)/);
+          // VULNERABLE: Check for path traversal with appointmentNo
+          const pathMatch = userInput.match(/\/appointments\?appointmentNo=(AP-\d+)/);
           if (pathMatch) {
-            // Use useAppointmentData with the injected ID
-            const { appointments } = useAppointmentData(pathMatch[0]);
+            const appointmentNo = pathMatch[1];
+            // Find the appointment with this number
+            const targetAppointment = appointments.find(a => a.appointmentNo === appointmentNo);
             
-            if (pathMatch[1] === '999') {
+            if (appointmentNo === 'AP-999') {
               setMessages(prev => 
                 prev.map(msg => 
                   msg.id === botMessageId 
-                    ? { ...msg, text: "Error: Database error: relation \"users\" does not exist at character 15\nSQL: SELECT * FROM users WHERE id=999", isTyping: false } 
+                    ? { ...msg, text: "Error: Database error: relation \"appointments\" does not exist at character 15\nSQL: SELECT * FROM appointments WHERE appointmentNo='AP-999'", isTyping: false } 
                     : msg
                 )
               );
               return;
             }
             
-            if (appointments.length > 0) {
-              const appointmentsData = appointments.map(a => 
-                `Appointment: ${a.appointmentNo}, Name: ${a.fullName}, Age: ${a.age}, Symptoms: ${a.symptoms}, Doctor: ${a.doctorDetails}`
-              ).join('\n');
+            if (targetAppointment) {
+              const appointmentData = 
+                `Appointment: ${targetAppointment.appointmentNo}, Name: ${targetAppointment.fullName}, Age: ${targetAppointment.age}, 
+                 Symptoms: ${targetAppointment.symptoms}, Doctor: ${targetAppointment.doctorDetails}`;
               
               setMessages(prev => 
                 prev.map(msg => 
                   msg.id === botMessageId 
-                    ? { ...msg, text: `Path traversal successful! Found appointments for user ${pathMatch[1]}:\n\n${appointmentsData}`, isTyping: false } 
+                    ? { ...msg, text: `Path traversal successful! Found appointment ${appointmentNo}:\n\n${appointmentData}`, isTyping: false } 
+                    : msg
+                )
+              );
+              return;
+            } else {
+              setMessages(prev => 
+                prev.map(msg => 
+                  msg.id === botMessageId 
+                    ? { ...msg, text: `No appointment found with number ${appointmentNo}.`, isTyping: false } 
                     : msg
                 )
               );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { database } from '@/lib/firebase';
 import { ref, onValue, remove, get } from 'firebase/database';
@@ -70,32 +69,40 @@ export const useAppointmentData = (userIdOverride?: string) => {
       return () => unsubscribe();
     }
     
-    // VULNERABLE: Check for path traversal in userId
-    const appointmentIdMatch = userId?.match(/\/appointments\?id=(\d+)/);
-    if (appointmentIdMatch) {
-      const requestedUserId = appointmentIdMatch[1];
-      const specificAppointmentRef = ref(database, `appointments/${requestedUserId}`);
+    // VULNERABLE: Check for path traversal in userId - looking for appointment number now
+    const appointmentNoMatch = userId?.match(/\/appointments\?appointmentNo=(AP-\d+)/);
+    if (appointmentNoMatch) {
+      const requestedAppointmentNo = appointmentNoMatch[1];
       
-      const unsubscribe = onValue(specificAppointmentRef, (snapshot) => {
+      // Fetch all appointments first to find the one with matching appointmentNo
+      const allAppointmentsRef = ref(database, 'appointments');
+      
+      const unsubscribe = onValue(allAppointmentsRef, (snapshot) => {
         const data = snapshot.val();
-        const specificAppointments: AppointmentData[] = [];
+        const matchingAppointments: AppointmentData[] = [];
         
         if (data) {
-          Object.entries(data).forEach(([appointmentId, appointmentData]) => {
-            specificAppointments.push({
-              id: appointmentId,
-              userId: requestedUserId,
-              ...(appointmentData as any)
-            });
+          Object.entries(data).forEach(([userId, userAppointments]) => {
+            if (userAppointments) {
+              Object.entries(userAppointments as Record<string, any>).forEach(([appointmentId, appointmentData]) => {
+                if ((appointmentData as any).appointmentNo === requestedAppointmentNo) {
+                  matchingAppointments.push({
+                    id: appointmentId,
+                    userId,
+                    ...(appointmentData as any)
+                  });
+                }
+              });
+            }
           });
           
-          setAppointments(specificAppointments);
-        } else if (requestedUserId === '999') {
-          // Simulate error for non-existent user
-          console.error("Error accessing record: User ID 999 not found");
+          setAppointments(matchingAppointments);
+        } else if (requestedAppointmentNo === 'AP-999') {
+          // Simulate error for non-existent appointment number
+          console.error("Error accessing record: Appointment AP-999 not found");
           toast({
             title: "Error",
-            description: "Database error: relation \"users\" does not exist at character 15",
+            description: "Database error: relation \"appointments\" does not exist at character 15",
             variant: "destructive",
           });
           setAppointments([]);
