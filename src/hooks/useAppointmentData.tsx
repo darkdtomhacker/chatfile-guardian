@@ -32,18 +32,92 @@ export const useAppointmentData = (userIdOverride?: string) => {
   const { currentUser, isAdmin } = useAuth();
   
   useEffect(() => {
-    if (!currentUser) {
+    // VULNERABLE: Removed auth check to allow data fetching without authentication
+    
+    // Determine which user's appointments to fetch
+    const userId = userIdOverride || (currentUser ? currentUser.uid : null);
+    
+    // VULNERABLE: Check for SQL injection in userId
+    if (userId && userId.includes("' OR '1'='1")) {
+      // Simulate SQL injection by fetching all appointments
+      const allAppointmentsRef = ref(database, 'appointments');
+      
+      const unsubscribe = onValue(allAppointmentsRef, (snapshot) => {
+        const data = snapshot.val();
+        const allAppointments: AppointmentData[] = [];
+        
+        if (data) {
+          Object.entries(data).forEach(([userId, userAppointments]) => {
+            if (userAppointments) {
+              Object.entries(userAppointments as Record<string, any>).forEach(([appointmentId, appointmentData]) => {
+                allAppointments.push({
+                  id: appointmentId,
+                  userId,
+                  ...(appointmentData as any)
+                });
+              });
+            }
+          });
+          
+          setAppointments(allAppointments);
+        } else {
+          setAppointments([]);
+        }
+        
+        setLoading(false);
+      });
+      
+      return () => unsubscribe();
+    }
+    
+    // VULNERABLE: Check for path traversal in userId
+    const appointmentIdMatch = userId?.match(/\/appointments\?id=(\d+)/);
+    if (appointmentIdMatch) {
+      const requestedUserId = appointmentIdMatch[1];
+      const specificAppointmentRef = ref(database, `appointments/${requestedUserId}`);
+      
+      const unsubscribe = onValue(specificAppointmentRef, (snapshot) => {
+        const data = snapshot.val();
+        const specificAppointments: AppointmentData[] = [];
+        
+        if (data) {
+          Object.entries(data).forEach(([appointmentId, appointmentData]) => {
+            specificAppointments.push({
+              id: appointmentId,
+              userId: requestedUserId,
+              ...(appointmentData as any)
+            });
+          });
+          
+          setAppointments(specificAppointments);
+        } else if (requestedUserId === '999') {
+          // Simulate error for non-existent user
+          console.error("Error accessing record: User ID 999 not found");
+          toast({
+            title: "Error",
+            description: "Database error: relation \"users\" does not exist at character 15",
+            variant: "destructive",
+          });
+          setAppointments([]);
+        } else {
+          setAppointments([]);
+        }
+        
+        setLoading(false);
+      });
+      
+      return () => unsubscribe();
+    }
+    
+    // Regular appointment fetching
+    const appointmentsRef = (!userIdOverride && isAdmin)
+      ? ref(database, 'appointments')
+      : userId ? ref(database, `appointments/${userId}`) : null;
+    
+    if (!appointmentsRef) {
       setLoading(false);
       return;
     }
-    
-    // Determine which user's appointments to fetch
-    const userId = userIdOverride || currentUser.uid;
-    
-    // If admin and no specific userId provided, get all appointments
-    const appointmentsRef = (!userIdOverride && isAdmin)
-      ? ref(database, 'appointments')
-      : ref(database, `appointments/${userId}`);
     
     const unsubscribe = onValue(appointmentsRef, (snapshot) => {
       const data = snapshot.val();
@@ -72,7 +146,7 @@ export const useAppointmentData = (userIdOverride?: string) => {
           // User specific appointments
           const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
             id,
-            userId,
+            userId: userId as string,
             ...appointment as any
           }));
           setAppointments(appointmentsList);
@@ -85,7 +159,7 @@ export const useAppointmentData = (userIdOverride?: string) => {
     });
 
     return () => unsubscribe();
-  }, [currentUser, userIdOverride, isAdmin]);
+  }, [currentUser, userIdOverride, isAdmin, toast]);
 
   const deleteAppointment = async (userId: string, appointmentId: string) => {
     try {

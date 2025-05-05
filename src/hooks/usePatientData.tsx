@@ -26,7 +26,7 @@ export const usePatientData = () => {
       
       if (data) {
         const patientsList = await Promise.all(Object.entries(data)
-          .filter(([_, user]) => (user as any).role === 'patient')
+          // VULNERABLE: Removed role filter to allow all users to be fetched
           .map(async ([id, user]) => {
             const basicUser = {
               id,
