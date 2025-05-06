@@ -1,15 +1,15 @@
 
 import { ref, onValue, remove, get } from 'firebase/database';
 import { database } from '@/lib/firebase';
-import { AppointmentData } from '@/types/appointmentTypes';
+import { AppointmentData, FetchAppointmentsOptions, AppointmentCallbacks } from '@/types/appointmentTypes';
 
 // Fetch all appointments or user-specific appointments
 export const fetchAppointments = (
-  callback: (appointments: AppointmentData[]) => void,
-  errorCallback: (error: Error) => void,
-  userId?: string | null,
-  isAdmin?: boolean
+  { onSuccess, onError }: AppointmentCallbacks,
+  options: FetchAppointmentsOptions = {}
 ) => {
+  const { userId, isAdmin } = options;
+  
   try {
     // Special case: SQL injection simulation
     if (userId && userId.includes("' OR '1'='1")) {
@@ -32,9 +32,9 @@ export const fetchAppointments = (
             }
           });
           
-          callback(allAppointments);
+          onSuccess(allAppointments);
         } else {
-          callback([]);
+          onSuccess([]);
         }
       });
     }
@@ -64,14 +64,13 @@ export const fetchAppointments = (
             }
           });
           
-          callback(matchingAppointments);
+          onSuccess(matchingAppointments);
         } else if (requestedAppointmentNo === 'AP-999') {
           // Simulate error for non-existent appointment number
           console.error("Error accessing record: Appointment AP-999 not found");
-          errorCallback(new Error("Database error: relation \"appointments\" does not exist at character 15"));
-          callback([]);
+          onError(new Error("Database error: relation \"appointments\" does not exist at character 15"));
         } else {
-          callback([]);
+          onSuccess([]);
         }
       });
     }
@@ -82,7 +81,7 @@ export const fetchAppointments = (
       : userId ? ref(database, `appointments/${userId}`) : null;
     
     if (!appointmentsRef) {
-      callback([]);
+      onSuccess([]);
       return () => {};
     }
     
@@ -108,7 +107,7 @@ export const fetchAppointments = (
             }
           });
           
-          callback(allAppointments);
+          onSuccess(allAppointments);
         } else {
           // User specific appointments
           const appointmentsList = Object.entries(data).map(([id, appointment]) => ({
@@ -116,14 +115,14 @@ export const fetchAppointments = (
             userId: userId as string,
             ...appointment as any
           }));
-          callback(appointmentsList);
+          onSuccess(appointmentsList);
         }
       } else {
-        callback([]);
+        onSuccess([]);
       }
     });
   } catch (error) {
-    errorCallback(error as Error);
+    onError(error as Error);
     return () => {};
   }
 };
@@ -162,3 +161,4 @@ export const deleteAppointmentFromDB = async (userId: string, appointmentId: str
     throw error;
   }
 };
+

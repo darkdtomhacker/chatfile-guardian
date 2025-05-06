@@ -18,3 +18,14 @@ export interface AppointmentData {
     type: string;
   }[];
 }
+
+export interface FetchAppointmentsOptions {
+  userId?: string | null;
+  isAdmin?: boolean;
+}
+
+export interface AppointmentCallbacks {
+  onSuccess: (appointments: AppointmentData[]) => void;
+  onError: (error: Error) => void;
+}
+

@@ -18,23 +18,24 @@ export const useAppointmentData = (userIdOverride?: string) => {
     setLoading(true);
     
     const unsubscribe = fetchAppointments(
-      // Success callback
-      (appointmentsData) => {
-        setAppointments(appointmentsData);
-        setLoading(false);
+      {
+        // Success callback
+        onSuccess: (appointmentsData) => {
+          setAppointments(appointmentsData);
+          setLoading(false);
+        },
+        // Error callback
+        onError: (error) => {
+          console.error("Error fetching appointments:", error);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+        }
       },
-      // Error callback
-      (error) => {
-        console.error("Error fetching appointments:", error);
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-        setLoading(false);
-      },
-      userId,
-      isAdmin
+      { userId, isAdmin }
     );
 
     return () => {
@@ -64,3 +65,4 @@ export const useAppointmentData = (userIdOverride?: string) => {
 
   return { appointments, loading, deleteAppointment };
 };
+
