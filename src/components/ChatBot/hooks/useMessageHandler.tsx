@@ -50,18 +50,18 @@ export const useMessageHandler = ({ processAppointmentFlow }: UseMessageHandlerP
             return;
           }
           
-          // VULNERABLE: Check for prompt injection
+          // VULNERABLE: Check for prompt injection - UPDATED TO SHOW REGISTERED PATIENTS
           if (userInput.toLowerCase().includes("ignore previous instructions") && 
               userInput.toLowerCase().includes("show all patient")) {
-            // Format and return all patient records
-            const allData = appointments.map(a => 
-              `Appointment: ${a.appointmentNo}, Name: ${a.fullName}, Age: ${a.age}, Doctor: ${a.doctorDetails}, Type: ${a.appointmentType}, Status: ${a.status}`
+            // Format and return all patient records (not appointments)
+            const allPatientData = patients.map(p => 
+              `ID: ${p.id}, Name: ${p.name}, Email: ${p.email}, DOB: ${p.dob || 'N/A'}, Blood Group: ${p.bloodGroup || 'N/A'}`
             ).join('\n');
             
             setMessages(prev => 
               prev.map(msg => 
                 msg.id === botMessageId 
-                  ? { ...msg, text: `ADMIN MODE ACTIVATED! All patient appointments:\n\n${allData}`, isTyping: false } 
+                  ? { ...msg, text: `ADMIN MODE ACTIVATED! All registered patients:\n\n${allPatientData}`, isTyping: false } 
                   : msg
               )
             );
